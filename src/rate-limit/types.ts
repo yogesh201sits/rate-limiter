@@ -12,14 +12,16 @@ export type RateLimitPolicy = {
   windowSeconds: number;
 };
 
+export type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
 export interface RateLimitStore {
   increment(
     key: string,
     windowSeconds: number,
-  ): Promise<{
-    count: number;
-    resetAt: number;
-  }>;
+  ): Promise<RateLimitEntry>;
 
   reset(key: string): Promise<void>;
 }

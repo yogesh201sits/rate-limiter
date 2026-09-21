@@ -1,30 +1,23 @@
-import type { RateLimitStore } from "./types";
-
-type Entry = {
-  count: number;
-  resetAt: number;
-};
+import type {
+  RateLimitEntry,
+  RateLimitStore,
+} from "./types";
 
 export class MemoryStore implements RateLimitStore {
-  private readonly store = new Map<string, Entry>();
+  private readonly store = new Map<string, RateLimitEntry>();
 
   async increment(
     key: string,
     windowSeconds: number,
-  ): Promise<{
-    count: number;
-    resetAt: number;
-  }> {
+  ): Promise<RateLimitEntry> {
     const now = Date.now();
 
     const existing = this.store.get(key);
 
     if (!existing || now >= existing.resetAt) {
-      const resetAt = now + windowSeconds * 1000;
-
-      const entry = {
+      const entry: RateLimitEntry = {
         count: 1,
-        resetAt,
+        resetAt: now + windowSeconds * 1000,
       };
 
       this.store.set(key, entry);
