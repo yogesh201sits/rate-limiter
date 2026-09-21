@@ -2,12 +2,19 @@ import { Hono } from "hono";
 
 import { MemoryStore } from "./rate-limit/memory-store";
 import { RateLimiter } from "./rate-limit/limiter";
-import { defaultPolicy } from "./rate-limit/policy";
+import { rateLimit } from "./rate-limit/middleware";
+import type { RateLimitPolicy } from "./rate-limit/types";
 
 const app = new Hono();
 
 const store = new MemoryStore();
 const limiter = new RateLimiter(store);
+
+const policy: RateLimitPolicy = {
+  name: "api",
+  limit: 5,
+  windowSeconds: 60,
+};
 
 app.get("/", (c) => {
   return c.json({
@@ -16,28 +23,17 @@ app.get("/", (c) => {
   });
 });
 
-app.get("/api/test", async (c) => {
-  const identifier = c.req.header("x-client-id") ?? "anonymous";
+app.use(
+  "/api/*",
+  rateLimit({
+    limiter,
+    policy,
+  }),
+);
 
-  const result = await limiter.check(
-    identifier,
-    defaultPolicy,
-  );
-
-  if (!result.allowed) {
-    return c.json(
-      {
-        error: "rate_limit_exceeded",
-        message: "Too many requests",
-        retryAfter: result.retryAfter,
-      },
-      429,
-    );
-  }
-
+app.get("/api/test", (c) => {
   return c.json({
     message: "Request allowed",
-    rateLimit: result,
   });
 });
 
