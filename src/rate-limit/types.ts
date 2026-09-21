@@ -31,3 +31,13 @@ export interface RateLimitStore {
     policyName: string,
   ): Promise<void>;
 }
+
+export type TokenBucketConfig = {
+  capacity: number;
+  refillRate: number;
+};
+
+export type TokenBucketState = {
+  tokens: number;
+  lastRefillAt: number;
+};
