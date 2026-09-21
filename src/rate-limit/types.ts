@@ -12,6 +12,10 @@ export type RateLimitPolicy = {
   windowSeconds: number;
 };
 
+export type RateLimitFailureMode =
+  | "open"
+  | "closed";
+
 export interface RateLimitStore {
   increment(
     key: string,

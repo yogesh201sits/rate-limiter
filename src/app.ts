@@ -2,10 +2,8 @@ import { Hono } from "hono";
 
 import { RateLimiter } from "./rate-limit/limiter";
 import { rateLimit } from "./rate-limit/middleware";
+import { resolvePolicy } from "./rate-limit/policy-resolver";
 import { RedisStore } from "./rate-limit/redis-store";
-import {
-  getRateLimitPolicy,
-} from "./rate-limit/policy";
 
 const app = new Hono();
 
@@ -23,13 +21,41 @@ app.use(
   "/api/*",
   rateLimit({
     limiter,
-    policy: getRateLimitPolicy("api"),
+    policy: resolvePolicy("api"),
   }),
 );
 
 app.get("/api/test", (c) => {
   return c.json({
-    message: "Request allowed",
+    message: "API request allowed",
+  });
+});
+
+app.use(
+  "/auth/*",
+  rateLimit({
+    limiter,
+    policy: resolvePolicy("auth"),
+  }),
+);
+
+app.get("/auth/test", (c) => {
+  return c.json({
+    message: "Auth request allowed",
+  });
+});
+
+app.use(
+  "/search/*",
+  rateLimit({
+    limiter,
+    policy: resolvePolicy("search"),
+  }),
+);
+
+app.get("/search/test", (c) => {
+  return c.json({
+    message: "Search request allowed",
   });
 });
 
