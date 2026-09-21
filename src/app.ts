@@ -3,18 +3,14 @@ import { Hono } from "hono";
 import { RateLimiter } from "./rate-limit/limiter";
 import { rateLimit } from "./rate-limit/middleware";
 import { RedisStore } from "./rate-limit/redis-store";
-import type { RateLimitPolicy } from "./rate-limit/types";
+import {
+  getRateLimitPolicy,
+} from "./rate-limit/policy";
 
 const app = new Hono();
 
 const store = new RedisStore();
 const limiter = new RateLimiter(store);
-
-const policy: RateLimitPolicy = {
-  name: "api",
-  limit: 5,
-  windowSeconds: 60,
-};
 
 app.get("/", (c) => {
   return c.json({
@@ -27,7 +23,7 @@ app.use(
   "/api/*",
   rateLimit({
     limiter,
-    policy,
+    policy: getRateLimitPolicy("api"),
   }),
 );
 

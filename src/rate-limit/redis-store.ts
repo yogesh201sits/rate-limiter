@@ -15,17 +15,26 @@ return { count, ttl }
 
 type RedisResult = [number, number];
 
-const buildKey = (key: string) => `rate-limit:${key}`;
+const buildKey = (
+  policyName: string,
+  key: string,
+) => {
+  return `rate-limit:${policyName}:${key}`;
+};
 
 export class RedisStore implements RateLimitStore {
   async increment(
     key: string,
     windowSeconds: number,
+    policyName: string,
   ): Promise<{
     count: number;
     resetAt: number;
   }> {
-    const redisKey = buildKey(key);
+    const redisKey = buildKey(
+      policyName,
+      key,
+    );
 
     const result = (await redis.eval(
       INCREMENT_SCRIPT,
@@ -42,7 +51,12 @@ export class RedisStore implements RateLimitStore {
     };
   }
 
-  async reset(key: string): Promise<void> {
-    await redis.del(buildKey(key));
+  async reset(
+    key: string,
+    policyName: string,
+  ): Promise<void> {
+    await redis.del(
+      buildKey(policyName, key),
+    );
   }
 }

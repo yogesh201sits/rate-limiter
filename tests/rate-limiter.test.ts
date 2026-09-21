@@ -85,11 +85,19 @@ describe("RateLimiter", () => {
       windowSeconds: 0.05,
     };
 
-    const first = await limiter.check("user-1", shortPolicy);
+    const first = await limiter.check(
+      "user-1",
+      shortPolicy,
+    );
 
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    await new Promise((resolve) =>
+      setTimeout(resolve, 60),
+    );
 
-    const second = await limiter.check("user-1", shortPolicy);
+    const second = await limiter.check(
+      "user-1",
+      shortPolicy,
+    );
 
     expect(first.allowed).toBe(true);
     expect(second.allowed).toBe(true);
@@ -103,11 +111,50 @@ describe("RateLimiter", () => {
     await limiter.check("user-1", policy);
     await limiter.check("user-1", policy);
 
-    await store.reset("user-1");
+    await store.reset("user-1", "test");
 
-    const result = await limiter.check("user-1", policy);
+    const result = await limiter.check(
+      "user-1",
+      policy,
+    );
 
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(2);
+  });
+
+  test("different policies have independent state", async () => {
+    const store = new MemoryStore();
+    const limiter = new RateLimiter(store);
+
+    const apiPolicy: RateLimitPolicy = {
+      name: "api",
+      limit: 3,
+      windowSeconds: 60,
+    };
+
+    const authPolicy: RateLimitPolicy = {
+      name: "auth",
+      limit: 2,
+      windowSeconds: 60,
+    };
+
+    await limiter.check("user-1", apiPolicy);
+    await limiter.check("user-1", apiPolicy);
+
+    const authResult = await limiter.check(
+      "user-1",
+      authPolicy,
+    );
+
+    expect(authResult.allowed).toBe(true);
+    expect(authResult.remaining).toBe(1);
+
+    const apiResult = await limiter.check(
+      "user-1",
+      apiPolicy,
+    );
+
+    expect(apiResult.allowed).toBe(true);
+    expect(apiResult.remaining).toBe(0);
   });
 });

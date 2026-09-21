@@ -16,6 +16,7 @@ export class RateLimiter {
     const result = await this.store.increment(
       key,
       policy.windowSeconds,
+      policy.name,
     );
 
     const allowed = result.count <= policy.limit;
@@ -28,7 +29,9 @@ export class RateLimiter {
     const retryAfter = allowed
       ? undefined
       : Math.max(
-          Math.ceil((result.resetAt - Date.now()) / 1000),
+          Math.ceil(
+            (result.resetAt - Date.now()) / 1000,
+          ),
           0,
         );
 
@@ -36,7 +39,9 @@ export class RateLimiter {
       allowed,
       limit: policy.limit,
       remaining,
-      resetAt: Math.floor(result.resetAt / 1000),
+      resetAt: Math.floor(
+        result.resetAt / 1000,
+      ),
       retryAfter,
     };
   }
