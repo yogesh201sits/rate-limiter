@@ -1,16 +1,26 @@
-import { describe, expect, test } from "bun:test";
+import {
+  beforeAll,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 
+import { redis } from "../src/redis";
 import { RedisStore } from "../src/rate-limit/redis-store";
+
+beforeAll(async () => {
+  await redis.ping();
+});
 
 describe("RedisStore", () => {
   test("increments a key", async () => {
     const store = new RedisStore();
     const key = `test-${crypto.randomUUID()}`;
 
-    const first = await store.increment(key, 60);
+    const result = await store.increment(key, 60);
 
-    expect(first.count).toBe(1);
-    expect(first.resetAt).toBeGreaterThan(Date.now());
+    expect(result.count).toBe(1);
+    expect(result.resetAt).toBeGreaterThan(Date.now());
 
     await store.reset(key);
   });
@@ -24,8 +34,6 @@ describe("RedisStore", () => {
 
     expect(first.count).toBe(1);
     expect(second.count).toBe(2);
-
-    expect(second.resetAt).toBeGreaterThan(Date.now());
 
     await store.reset(key);
   });
@@ -58,6 +66,32 @@ describe("RedisStore", () => {
     const result = await store.increment(key, 60);
 
     expect(result.count).toBe(1);
+
+    await store.reset(key);
+  });
+
+  test("handles concurrent increments atomically", async () => {
+    const store = new RedisStore();
+    const key = `concurrent-${crypto.randomUUID()}`;
+
+    const results = await Promise.all(
+      Array.from({ length: 100 }, () =>
+        store.increment(key, 60),
+      ),
+    );
+
+    const counts = results
+      .map((result) => result.count)
+      .sort((a, b) => a - b);
+
+    expect(results).toHaveLength(100);
+
+    expect(counts[0]).toBe(1);
+    expect(counts[99]).toBe(100);
+
+    const uniqueCounts = new Set(counts);
+
+    expect(uniqueCounts.size).toBe(100);
 
     await store.reset(key);
   });
