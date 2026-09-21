@@ -71,6 +71,7 @@ export const rateLimit = ({
 
       if (failureMode === "open") {
         await next();
+        return;
       }
 
       return c.json(
