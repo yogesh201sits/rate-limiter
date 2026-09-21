@@ -16,6 +16,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "hono": "^4.13.8"
+    "hono": "^4.13.8",
+    "ioredis": "^6.0.0"
   }
 }
