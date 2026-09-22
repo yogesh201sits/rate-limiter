@@ -1,27 +1,29 @@
 import { Hono } from "hono";
 
-import { RateLimiter } from "./rate-limit/limiter";
+import { createRateLimitEngine } from "./rate-limit/factory";
 import { rateLimit } from "./rate-limit/middleware";
 import { resolvePolicy } from "./rate-limit/policy-resolver";
 import { RedisStore } from "./rate-limit/redis-store";
 import { RedisTokenBucketStore } from "./rate-limit/redis-token-bucket-store";
-import { TokenBucketLimiter } from "./rate-limit/token-bucket-limiter";
-import { tokenBucketRateLimit } from "./rate-limit/token-bucket-middleware";
 
 const app = new Hono();
 
+/* -------------------------------------------------------------------------- */
+/* Stores                                                                     */
+/* -------------------------------------------------------------------------- */
 
-const store = new RedisStore();
-
-const limiter = new RateLimiter(store);
-
+const fixedWindowStore = new RedisStore();
 
 const tokenBucketStore = new RedisTokenBucketStore();
 
-const tokenBucketLimiter = new TokenBucketLimiter(
+const dependencies = {
+  fixedWindowStore,
   tokenBucketStore,
-);
+};
 
+/* -------------------------------------------------------------------------- */
+/* Health                                                                     */
+/* -------------------------------------------------------------------------- */
 
 app.get("/", (c) => {
   return c.json({
@@ -30,12 +32,20 @@ app.get("/", (c) => {
   });
 });
 
+/* -------------------------------------------------------------------------- */
+/* API                                                                        */
+/* -------------------------------------------------------------------------- */
+
+const apiPolicy = resolvePolicy("api");
 
 app.use(
   "/api/*",
   rateLimit({
-    limiter,
-    policy: resolvePolicy("api"),
+    limiter: createRateLimitEngine(
+      apiPolicy,
+      dependencies,
+    ),
+    policy: apiPolicy,
     failureMode: "closed",
   }),
 );
@@ -46,12 +56,20 @@ app.get("/api/test", (c) => {
   });
 });
 
+/* -------------------------------------------------------------------------- */
+/* Auth                                                                       */
+/* -------------------------------------------------------------------------- */
+
+const authPolicy = resolvePolicy("auth");
 
 app.use(
   "/auth/*",
   rateLimit({
-    limiter,
-    policy: resolvePolicy("auth"),
+    limiter: createRateLimitEngine(
+      authPolicy,
+      dependencies,
+    ),
+    policy: authPolicy,
     failureMode: "closed",
   }),
 );
@@ -62,12 +80,20 @@ app.get("/auth/test", (c) => {
   });
 });
 
+/* -------------------------------------------------------------------------- */
+/* Search                                                                     */
+/* -------------------------------------------------------------------------- */
+
+const searchPolicy = resolvePolicy("search");
 
 app.use(
   "/search/*",
   rateLimit({
-    limiter,
-    policy: resolvePolicy("search"),
+    limiter: createRateLimitEngine(
+      searchPolicy,
+      dependencies,
+    ),
+    policy: searchPolicy,
     failureMode: "closed",
   }),
 );
@@ -78,14 +104,20 @@ app.get("/search/test", (c) => {
   });
 });
 
+/* -------------------------------------------------------------------------- */
+/* Burst                                                                     */
+/* -------------------------------------------------------------------------- */
+
+const burstPolicy = resolvePolicy("burst");
+
 app.use(
   "/burst/*",
-  tokenBucketRateLimit({
-    limiter: tokenBucketLimiter,
-    config: {
-      capacity: 10,
-      refillRate: 2,
-    },
+  rateLimit({
+    limiter: createRateLimitEngine(
+      burstPolicy,
+      dependencies,
+    ),
+    policy: burstPolicy,
     failureMode: "closed",
   }),
 );
