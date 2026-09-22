@@ -5,6 +5,7 @@ import { rateLimit } from "./rate-limit/middleware";
 import { resolvePolicy } from "./rate-limit/policy-resolver";
 import { RedisStore } from "./rate-limit/redis-store";
 import { RedisTokenBucketStore } from "./rate-limit/redis-token-bucket-store";
+import { RedisLeakyBucketStore } from "./rate-limit/redis-leaky-bucket-store";
 
 const app = new Hono();
 
@@ -14,11 +15,16 @@ const app = new Hono();
 
 const fixedWindowStore = new RedisStore();
 
-const tokenBucketStore = new RedisTokenBucketStore();
+const tokenBucketStore =
+  new RedisTokenBucketStore();
+
+const leakyBucketStore =
+  new RedisLeakyBucketStore();
 
 const dependencies = {
   fixedWindowStore,
   tokenBucketStore,
+  leakyBucketStore,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -105,7 +111,7 @@ app.get("/search/test", (c) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/* Burst                                                                     */
+/* Burst                                                                      */
 /* -------------------------------------------------------------------------- */
 
 const burstPolicy = resolvePolicy("burst");
@@ -125,6 +131,30 @@ app.use(
 app.get("/burst/test", (c) => {
   return c.json({
     message: "Burst request allowed",
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Leaky Bucket                                                               */
+/* -------------------------------------------------------------------------- */
+
+const leakyPolicy = resolvePolicy("leaky");
+
+app.use(
+  "/leaky/*",
+  rateLimit({
+    limiter: createRateLimitEngine(
+      leakyPolicy,
+      dependencies,
+    ),
+    policy: leakyPolicy,
+    failureMode: "closed",
+  }),
+);
+
+app.get("/leaky/test", (c) => {
+  return c.json({
+    message: "Leaky bucket request allowed",
   });
 });
 
