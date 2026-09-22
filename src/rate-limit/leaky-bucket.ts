@@ -1,11 +1,11 @@
-export type LeakyBucketConfig = {
-  capacity: number;
-  leakRate: number;
-};
+import type {
+  LeakyBucketConfig,
+} from "./types";
 
 export type LeakyBucketResult = {
   allowed: boolean;
   remaining: number;
+  resetAt: number;
   retryAfter?: number;
 };
 

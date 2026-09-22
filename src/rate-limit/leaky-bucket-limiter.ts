@@ -36,7 +36,7 @@ export class LeakyBucketLimiter
         Math.max(result.remaining, 0),
       ),
       resetAt: Math.floor(
-        Date.now() / 1000,
+        result.resetAt / 1000,
       ),
       retryAfter: result.retryAfter,
     };

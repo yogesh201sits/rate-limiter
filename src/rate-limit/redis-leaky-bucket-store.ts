@@ -9,13 +9,6 @@ import type {
   LeakyBucketStore,
 } from "./leaky-bucket";
 
-/**
- * The bucket stores the theoretical time at which
- * the next accepted request can leave the bucket.
- *
- * Redis TIME is used so all application instances
- * share the same clock.
- */
 const CONSUME_SCRIPT = `
 local key = KEYS[1]
 
@@ -61,6 +54,7 @@ if nextAvailableAt == nil then
   return {
     1,
     capacity - 1,
+    nextAvailableAt,
     0
   }
 end
@@ -71,16 +65,15 @@ local queuedTime =
     0
   )
 
-local queuedRequests =
-  math.ceil(
-    queuedTime / leakInterval
-  )
+local maxQueueTime =
+  capacity * leakInterval
 
-if queuedRequests >= capacity then
+if queuedTime >= maxQueueTime then
   local retryAfter =
     math.max(
       math.ceil(
-        queuedTime / 1000
+        (queuedTime - maxQueueTime + leakInterval)
+        / 1000
       ),
       1
     )
@@ -88,9 +81,15 @@ if queuedRequests >= capacity then
   return {
     0,
     0,
+    nextAvailableAt,
     retryAfter
   }
 end
+
+local queuedRequests =
+  math.floor(
+    queuedTime / leakInterval
+  )
 
 local scheduledFrom =
   math.max(
@@ -132,11 +131,13 @@ local remaining =
 return {
   1,
   remaining,
+  nextAvailableAt,
   0
 }
 `;
 
 type RedisLeakyBucketResult = [
+  number,
   number,
   number,
   number,
@@ -166,12 +167,14 @@ export class RedisLeakyBucketStore
     const [
       allowed,
       remaining,
+      resetAt,
       retryAfter,
     ] = result;
 
     return {
       allowed: allowed === 1,
       remaining,
+      resetAt,
       retryAfter:
         allowed === 1
           ? undefined

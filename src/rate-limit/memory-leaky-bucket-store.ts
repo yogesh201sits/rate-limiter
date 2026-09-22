@@ -31,9 +31,11 @@ export class MemoryLeakyBucketStore
     const existing = this.store.get(key);
 
     if (!existing) {
+      const nextAvailableAt =
+        now + leakInterval;
+
       this.store.set(key, {
-        nextAvailableAt:
-          now + leakInterval,
+        nextAvailableAt,
       });
 
       return {
@@ -42,6 +44,7 @@ export class MemoryLeakyBucketStore
           config.capacity - 1,
           0,
         ),
+        resetAt: nextAvailableAt,
       };
     }
 
@@ -50,28 +53,40 @@ export class MemoryLeakyBucketStore
       0,
     );
 
-    const queuedRequests = Math.ceil(
-      queuedTime / leakInterval,
-    );
+    const maxQueueTime =
+      config.capacity * leakInterval;
 
-    if (queuedRequests >= config.capacity) {
+    if (queuedTime >= maxQueueTime) {
       const retryAfter = Math.max(
-        Math.ceil(queuedTime / 1000),
+        Math.ceil(
+          (
+            queuedTime -
+            maxQueueTime +
+            leakInterval
+          ) / 1000,
+        ),
         1,
       );
 
       return {
         allowed: false,
         remaining: 0,
+        resetAt: existing.nextAvailableAt,
         retryAfter,
       };
     }
 
+    const queuedRequests = Math.floor(
+      queuedTime / leakInterval,
+    );
+
+    const scheduledFrom = Math.max(
+      existing.nextAvailableAt,
+      now,
+    );
+
     const nextAvailableAt =
-      Math.max(
-        existing.nextAvailableAt,
-        now,
-      ) + leakInterval;
+      scheduledFrom + leakInterval;
 
     this.store.set(key, {
       nextAvailableAt,
@@ -87,6 +102,7 @@ export class MemoryLeakyBucketStore
     return {
       allowed: true,
       remaining,
+      resetAt: nextAvailableAt,
     };
   }
 
