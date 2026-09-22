@@ -36,6 +36,16 @@ export const rateLimitPolicies = {
       refillRate: 2,
     },
   },
+
+  leaky: {
+    name: "leaky",
+    algorithm: "leaky-bucket",
+    config: {
+      capacity: 10,
+      leakRate: 2,
+    },
+  },
+  
 } satisfies Record<string, RateLimitPolicy>;
 
 export type RateLimitPolicyName =

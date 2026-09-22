@@ -1,4 +1,5 @@
 import type { RateLimitEngine } from "./limiter-interface";
+
 import type {
   RateLimitPolicy,
   RateLimitStore,
@@ -6,12 +7,15 @@ import type {
 
 import { RateLimiter } from "./limiter";
 import { TokenBucketLimiter } from "./token-bucket-limiter";
+import { LeakyBucketLimiter } from "./leaky-bucket-limiter";
 
 import type { TokenBucketStore } from "./token-bucket";
+import type { LeakyBucketStore } from "./leaky-bucket";
 
 export type RateLimitFactoryDependencies = {
   fixedWindowStore: RateLimitStore;
   tokenBucketStore: TokenBucketStore;
+  leakyBucketStore: LeakyBucketStore;
 };
 
 export const createRateLimitEngine = (
@@ -29,8 +33,14 @@ export const createRateLimitEngine = (
         dependencies.tokenBucketStore,
       );
 
-    default: {
-      throw new Error("Unsupported rate limit algorithm");
-    }
+    case "leaky-bucket":
+      return new LeakyBucketLimiter(
+        dependencies.leakyBucketStore,
+      );
+
+    default:
+      throw new Error(
+        "Unsupported rate limit algorithm",
+      );
   }
 };
