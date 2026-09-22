@@ -208,8 +208,11 @@ describe("Rate limit middleware", () => {
         limiter: failingLimiter,
         policy: {
           name: "test",
-          limit: 5,
-          windowSeconds: 60,
+          algorithm: "fixed-window",
+          config: {
+            limit: 5,
+            windowSeconds: 60,
+          },
         },
         failureMode: "open",
       }),
@@ -247,8 +250,11 @@ describe("Rate limit middleware", () => {
         limiter: failingLimiter,
         policy: {
           name: "test",
-          limit: 5,
-          windowSeconds: 60,
+          algorithm: "fixed-window",
+          config: {
+            limit: 5,
+            windowSeconds: 60,
+          },
         },
         failureMode: "closed",
       }),
