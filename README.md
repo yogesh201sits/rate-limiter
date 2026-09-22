@@ -591,12 +591,3 @@ Potential future work includes:
 * More extensive failure-injection testing
 
 ---
-
-## License
-
-MIT
-
-```
-
-This is ready to use as the project's README. I kept the benchmark numbers exactly from your completed run and explicitly qualified what they do—and don't—demonstrate.
-```
