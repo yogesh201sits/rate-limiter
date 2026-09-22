@@ -6,6 +6,7 @@ import { resolvePolicy } from "./rate-limit/policy-resolver";
 import { RedisStore } from "./rate-limit/redis-store";
 import { RedisTokenBucketStore } from "./rate-limit/redis-token-bucket-store";
 import { RedisLeakyBucketStore } from "./rate-limit/redis-leaky-bucket-store";
+import { metricsRegistry } from "./observability/metrics";
 
 const app = new Hono();
 
@@ -36,6 +37,17 @@ app.get("/", (c) => {
     name: "rate-limiter",
     status: "ok",
   });
+});
+
+app.get("/metrics", async (c) => {
+  c.header(
+    "Content-Type",
+    metricsRegistry.contentType,
+  );
+
+  return c.text(
+    await metricsRegistry.metrics(),
+  );
 });
 
 /* -------------------------------------------------------------------------- */

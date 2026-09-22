@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "hono": "^4.13.8",
-    "ioredis": "^6.0.0"
+    "ioredis": "^6.0.0",
+    "prom-client": "^15.1.3"
   }
 }
