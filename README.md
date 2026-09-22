@@ -1,5 +1,14 @@
 # Rate Limiter
 
+[![Bun](https://img.shields.io/badge/Bun-1.3.14-black?logo=bun)](https://bun.sh/)
+[![Hono](https://img.shields.io/badge/Hono-4.x-orange?logo=hono)](https://hono.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Redis](https://img.shields.io/badge/Redis-supported-red?logo=redis)](https://redis.io/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-metrics-orange?logo=prometheus)](https://prometheus.io/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+A production-oriented rate limiting service built with Bun, Hono, Redis, and TypeScript.
+
 A production-oriented distributed rate limiter built with **Bun, Hono, TypeScript, and Redis**.
 
 The project implements three rate-limiting algorithms behind a common engine interface:
@@ -225,6 +234,9 @@ Example:
 * **Linting / Formatting:** Biome
 
 ---
+
+<img width="600" height="600" alt="arch" src="https://github.com/user-attachments/assets/649fa8ad-7741-4dd0-b196-9c43f8cf5351" />
+
 
 ## Project Structure
 
