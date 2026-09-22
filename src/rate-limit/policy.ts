@@ -3,24 +3,43 @@ import type { RateLimitPolicy } from "./types";
 export const rateLimitPolicies = {
   api: {
     name: "api",
-    limit: 100,
-    windowSeconds: 60,
+    algorithm: "fixed-window",
+    config: {
+      limit: 100,
+      windowSeconds: 60,
+    },
   },
 
   auth: {
     name: "auth",
-    limit: 5,
-    windowSeconds: 60,
+    algorithm: "fixed-window",
+    config: {
+      limit: 5,
+      windowSeconds: 60,
+    },
   },
 
   search: {
     name: "search",
-    limit: 30,
-    windowSeconds: 60,
+    algorithm: "fixed-window",
+    config: {
+      limit: 30,
+      windowSeconds: 60,
+    },
+  },
+
+  burst: {
+    name: "burst",
+    algorithm: "token-bucket",
+    config: {
+      capacity: 10,
+      refillRate: 2,
+    },
   },
 } satisfies Record<string, RateLimitPolicy>;
 
-export type RateLimitPolicyName = keyof typeof rateLimitPolicies;
+export type RateLimitPolicyName =
+  keyof typeof rateLimitPolicies;
 
 export const getRateLimitPolicy = (
   name: RateLimitPolicyName,
