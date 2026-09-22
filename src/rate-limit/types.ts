@@ -6,15 +6,31 @@ export type RateLimitResult = {
   retryAfter?: number;
 };
 
-export type RateLimitPolicy = {
-  name: string;
+export type RateLimitFailureMode =
+  | "open"
+  | "closed";
+
+export type FixedWindowConfig = {
   limit: number;
   windowSeconds: number;
 };
 
-export type RateLimitFailureMode =
-  | "open"
-  | "closed";
+export type TokenBucketConfig = {
+  capacity: number;
+  refillRate: number;
+};
+
+export type RateLimitPolicy =
+  | {
+      name: string;
+      algorithm: "fixed-window";
+      config: FixedWindowConfig;
+    }
+  | {
+      name: string;
+      algorithm: "token-bucket";
+      config: TokenBucketConfig;
+    };
 
 export interface RateLimitStore {
   increment(
@@ -31,13 +47,3 @@ export interface RateLimitStore {
     policyName: string,
   ): Promise<void>;
 }
-
-export type TokenBucketConfig = {
-  capacity: number;
-  refillRate: number;
-};
-
-export type TokenBucketState = {
-  tokens: number;
-  lastRefillAt: number;
-};
