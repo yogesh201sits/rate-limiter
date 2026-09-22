@@ -1,10 +1,19 @@
 import type { Context, Next } from "hono";
 
-import type { RateLimitEngine } from "./limiter-interface";
+import {
+  rateLimitAllowedTotal,
+  rateLimitCheckDuration,
+  rateLimitErrorsTotal,
+  rateLimitRejectedTotal,
+  rateLimitRequestsTotal,
+} from "../observability/metrics";
+
 import type {
   RateLimitFailureMode,
   RateLimitPolicy,
 } from "./types";
+
+import type { RateLimitEngine } from "./limiter-interface";
 
 export type RateLimitMiddlewareOptions = {
   limiter: RateLimitEngine;
@@ -23,11 +32,29 @@ export const rateLimit = ({
   return async (c: Context, next: Next) => {
     const key = keyGenerator(c);
 
+    const labels = {
+      algorithm: policy.algorithm,
+      policy: policy.name,
+    };
+
+    const endTimer =
+      rateLimitCheckDuration.startTimer(
+        labels,
+      );
+
+    rateLimitRequestsTotal.inc(labels);
+
     try {
       const result = await limiter.check(
         key,
         policy,
       );
+
+      if (result.allowed) {
+        rateLimitAllowedTotal.inc(labels);
+      } else {
+        rateLimitRejectedTotal.inc(labels);
+      }
 
       c.header(
         "X-RateLimit-Limit",
@@ -44,14 +71,14 @@ export const rateLimit = ({
         String(result.resetAt),
       );
 
-      if (!result.allowed) {
-        if (result.retryAfter !== undefined) {
-          c.header(
-            "Retry-After",
-            String(result.retryAfter),
-          );
-        }
+      if (result.retryAfter !== undefined) {
+        c.header(
+          "Retry-After",
+          String(result.retryAfter),
+        );
+      }
 
+      if (!result.allowed) {
         return c.json(
           {
             error: "rate_limit_exceeded",
@@ -64,6 +91,8 @@ export const rateLimit = ({
 
       await next();
     } catch (error) {
+      rateLimitErrorsTotal.inc(labels);
+
       console.error(
         "Rate limiter storage error:",
         error,
@@ -81,6 +110,8 @@ export const rateLimit = ({
         },
         503,
       );
+    } finally {
+      endTimer();
     }
   };
 };
