@@ -20,6 +20,11 @@ export type TokenBucketConfig = {
   refillRate: number;
 };
 
+export type LeakyBucketConfig = {
+  capacity: number;
+  leakRate: number;
+};
+
 export type RateLimitPolicy =
   | {
       name: string;
@@ -52,8 +57,3 @@ export interface RateLimitStore {
     policyName: string,
   ): Promise<void>;
 }
-
-export type LeakyBucketConfig = {
-  capacity: number;
-  leakRate: number;
-};
