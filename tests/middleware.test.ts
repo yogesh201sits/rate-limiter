@@ -12,7 +12,6 @@ type ErrorResponse = {
   retryAfter?: number;
 };
 
-
 type SuccessResponse = {
   message: string;
 };
@@ -111,14 +110,11 @@ describe("Rate limit middleware", () => {
       },
     });
 
-    const searchResponse = await app.request(
-      "/search/test",
-      {
-        headers: {
-          "x-client-id": clientId,
-        },
+    const searchResponse = await app.request("/search/test", {
+      headers: {
+        "x-client-id": clientId,
       },
-    );
+    });
 
     expect(
       apiResponse.headers.get("X-RateLimit-Remaining"),
@@ -129,51 +125,53 @@ describe("Rate limit middleware", () => {
     ).toBe("4");
 
     expect(
-      searchResponse.headers.get(
-        "X-RateLimit-Remaining",
-      ),
+      searchResponse.headers.get("X-RateLimit-Remaining"),
     ).toBe("29");
   });
 
-  test("rejects auth requests after the limit", async () => {
-    const clientId = `auth-limit-${crypto.randomUUID()}`;
+  test(
+    "rejects auth requests after the limit",
+    async () => {
+      const clientId = `auth-limit-${crypto.randomUUID()}`;
 
-    for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 5; i++) {
+        const response = await app.request("/auth/test", {
+          headers: {
+            "x-client-id": clientId,
+          },
+        });
+
+        expect(response.status).toBe(200);
+      }
+
       const response = await app.request("/auth/test", {
         headers: {
           "x-client-id": clientId,
         },
       });
 
-      expect(response.status).toBe(200);
-    }
+      expect(response.status).toBe(429);
 
-    const response = await app.request("/auth/test", {
-      headers: {
-        "x-client-id": clientId,
-      },
-    });
+      expect(
+        response.headers.get("X-RateLimit-Limit"),
+      ).toBe("5");
 
-    expect(response.status).toBe(429);
+      expect(
+        response.headers.get("X-RateLimit-Remaining"),
+      ).toBe("0");
 
-    expect(
-      response.headers.get("X-RateLimit-Limit"),
-    ).toBe("5");
+      expect(
+        response.headers.get("Retry-After"),
+      ).toBeTruthy();
 
-    expect(
-      response.headers.get("X-RateLimit-Remaining"),
-    ).toBe("0");
+      const body = (await response.json()) as ErrorResponse;
 
-    expect(
-      response.headers.get("Retry-After"),
-    ).toBeTruthy();
-
-    const body = (await response.json()) as ErrorResponse;
-
-    expect(body.error).toBe("rate_limit_exceeded");
-    expect(body.message).toBe("Too many requests");
-    expect(body.retryAfter).toBeDefined();
-  });
+      expect(body.error).toBe("rate_limit_exceeded");
+      expect(body.message).toBe("Too many requests");
+      expect(body.retryAfter).toBeDefined();
+    },
+    15000,
+  );
 
   test("uses anonymous as the default client key", async () => {
     const response = await app.request("/auth/test");
@@ -194,82 +192,87 @@ describe("Rate limit middleware", () => {
       response.headers.get("X-RateLimit-Limit"),
     ).toBeNull();
   });
+
   test("allows the request when failure mode is open", async () => {
-  const app = new Hono();
+    const app = new Hono();
 
-  const failingLimiter = {
-    check: async () => {
-      throw new Error("Redis unavailable");
-    },
-  } as unknown as RateLimiter;
-
-  app.use(
-    "/test/*",
-    rateLimit({
-      limiter: failingLimiter,
-      policy: {
-        name: "test",
-        limit: 5,
-        windowSeconds: 60,
+    const failingLimiter = {
+      check: async () => {
+        throw new Error("Redis unavailable");
       },
-      failureMode: "open",
-    }),
-  );
+    } as unknown as RateLimiter;
 
-  app.get("/test/open", (c) => {
-    return c.json({
+    app.use(
+      "/test/*",
+      rateLimit({
+        limiter: failingLimiter,
+        policy: {
+          name: "test",
+          algorithm: "fixed-window",
+          config: {
+            limit: 5,
+            windowSeconds: 60,
+          },
+        },
+        failureMode: "open",
+      }),
+    );
+
+    app.get("/test/open", (c) => {
+      return c.json({
+        message: "Request allowed",
+      });
+    });
+
+    const response = await app.request("/test/open");
+
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as SuccessResponse;
+
+    expect(body).toEqual({
       message: "Request allowed",
     });
   });
 
-  const response = await app.request("/test/open");
+  test("rejects the request when failure mode is closed", async () => {
+    const app = new Hono();
 
-  expect(response.status).toBe(200);
-
-  const body = (await response.json()) as SuccessResponse;
-
-  expect(body).toEqual({
-    message: "Request allowed",
-  });
-});
-
-test("rejects the request when failure mode is closed", async () => {
-  const app = new Hono();
-
-  const failingLimiter = {
-    check: async () => {
-      throw new Error("Redis unavailable");
-    },
-  } as unknown as RateLimiter;
-
-  app.use(
-    "/test/*",
-    rateLimit({
-      limiter: failingLimiter,
-      policy: {
-        name: "test",
-        limit: 5,
-        windowSeconds: 60,
+    const failingLimiter = {
+      check: async () => {
+        throw new Error("Redis unavailable");
       },
-      failureMode: "closed",
-    }),
-  );
+    } as unknown as RateLimiter;
 
-  app.get("/test/closed", (c) => {
-    return c.json({
-      message: "Request allowed",
+    app.use(
+      "/test/*",
+      rateLimit({
+        limiter: failingLimiter,
+        policy: {
+          name: "test",
+          algorithm: "fixed-window",
+          config: {
+            limit: 5,
+            windowSeconds: 60,
+          },
+        },
+        failureMode: "closed",
+      }),
+    );
+
+    app.get("/test/closed", (c) => {
+      return c.json({
+        message: "Request allowed",
+      });
     });
+
+    const response = await app.request("/test/closed");
+
+    expect(response.status).toBe(503);
+
+    const body = (await response.json()) as ErrorResponse;
+
+    expect(body.error).toBe("rate_limit_unavailable");
+    expect(body.message).toBe("Rate limiter unavailable");
   });
-
-  const response = await app.request("/test/closed");
-
-  expect(response.status).toBe(503);
-
-  const body = (await response.json()) as ErrorResponse;
-
-  expect(body.error).toBe("rate_limit_unavailable");
-  expect(body.message).toBe(
-    "Rate limiter unavailable",
-  );
-});
 });

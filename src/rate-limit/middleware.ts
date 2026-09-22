@@ -1,13 +1,13 @@
 import type { Context, Next } from "hono";
 
-import { RateLimiter } from "./limiter";
+import type { RateLimitEngine } from "./limiter-interface";
 import type {
   RateLimitFailureMode,
   RateLimitPolicy,
 } from "./types";
 
 export type RateLimitMiddlewareOptions = {
-  limiter: RateLimiter;
+  limiter: RateLimitEngine;
   policy: RateLimitPolicy;
   failureMode?: RateLimitFailureMode;
   keyGenerator?: (c: Context) => string;

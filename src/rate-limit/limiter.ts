@@ -3,8 +3,9 @@ import type {
   RateLimitResult,
   RateLimitStore,
 } from "./types";
+import type { RateLimitEngine } from "./limiter-interface";
 
-export class RateLimiter {
+export class RateLimiter implements RateLimitEngine {
   constructor(
     private readonly store: RateLimitStore,
   ) {}
@@ -13,16 +14,22 @@ export class RateLimiter {
     key: string,
     policy: RateLimitPolicy,
   ): Promise<RateLimitResult> {
+    if (policy.algorithm !== "fixed-window") {
+      throw new Error(
+        "RateLimiter requires a fixed-window policy",
+      );
+    }
+
     const result = await this.store.increment(
       key,
-      policy.windowSeconds,
+      policy.config.windowSeconds,
       policy.name,
     );
 
-    const allowed = result.count <= policy.limit;
+    const allowed = result.count <= policy.config.limit;
 
     const remaining = Math.max(
-      policy.limit - result.count,
+      policy.config.limit - result.count,
       0,
     );
 
@@ -37,7 +44,7 @@ export class RateLimiter {
 
     return {
       allowed,
-      limit: policy.limit,
+      limit: policy.config.limit,
       remaining,
       resetAt: Math.floor(
         result.resetAt / 1000,

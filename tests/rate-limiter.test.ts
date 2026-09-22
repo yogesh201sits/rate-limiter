@@ -6,8 +6,11 @@ import type { RateLimitPolicy } from "../src/rate-limit/types";
 
 const policy: RateLimitPolicy = {
   name: "test",
-  limit: 3,
-  windowSeconds: 60,
+  algorithm: "fixed-window",
+  config: {
+    limit: 3,
+    windowSeconds: 60,
+  },
 };
 
 describe("RateLimiter", () => {
@@ -81,8 +84,11 @@ describe("RateLimiter", () => {
 
     const shortPolicy: RateLimitPolicy = {
       name: "short-test",
-      limit: 2,
-      windowSeconds: 0.05,
+      algorithm: "fixed-window",
+      config: {
+        limit: 2,
+        windowSeconds: 0.05,
+      },
     };
 
     const first = await limiter.check(
@@ -128,14 +134,20 @@ describe("RateLimiter", () => {
 
     const apiPolicy: RateLimitPolicy = {
       name: "api",
-      limit: 3,
-      windowSeconds: 60,
+      algorithm: "fixed-window",
+      config: {
+        limit: 3,
+        windowSeconds: 60,
+      },
     };
 
     const authPolicy: RateLimitPolicy = {
       name: "auth",
-      limit: 2,
-      windowSeconds: 60,
+      algorithm: "fixed-window",
+      config: {
+        limit: 2,
+        windowSeconds: 60,
+      },
     };
 
     await limiter.check("user-1", apiPolicy);
