@@ -3,22 +3,17 @@ export type TokenBucketConfig = {
   refillRate: number;
 };
 
-export type TokenBucketState = {
+export type TokenBucketResult = {
+  allowed: boolean;
   tokens: number;
-  lastRefillAt: number;
+  retryAfter?: number;
 };
 
 export interface TokenBucketStore {
-  get(
+  consume(
     key: string,
-  ): Promise<TokenBucketState | null>;
+    config: TokenBucketConfig,
+  ): Promise<TokenBucketResult>;
 
-  set(
-    key: string,
-    state: TokenBucketState,
-  ): Promise<void>;
-
-  reset(
-    key: string,
-  ): Promise<void>;
+  reset(key: string): Promise<void>;
 }

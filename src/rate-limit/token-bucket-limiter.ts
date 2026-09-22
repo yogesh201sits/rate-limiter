@@ -1,6 +1,4 @@
-import type {
-  RateLimitResult,
-} from "./types";
+import type { RateLimitResult } from "./types";
 
 import type {
   TokenBucketConfig,
@@ -16,59 +14,21 @@ export class TokenBucketLimiter {
     key: string,
     config: TokenBucketConfig,
   ): Promise<RateLimitResult> {
-    const now = Date.now();
-
-    const existing = await this.store.get(key);
-
-    const state = existing ?? {
-      tokens: config.capacity,
-      lastRefillAt: now,
-    };
-
-    const elapsedSeconds =
-      (now - state.lastRefillAt) / 1000;
-
-    const refilledTokens = Math.min(
-      config.capacity,
-      state.tokens +
-        elapsedSeconds * config.refillRate,
+    const result = await this.store.consume(
+      key,
+      config,
     );
 
-    const allowed = refilledTokens >= 1;
-
-    const tokens = allowed
-      ? refilledTokens - 1
-      : refilledTokens;
-
-    await this.store.set(key, {
-      tokens,
-      lastRefillAt: now,
-    });
-
-    const remaining = Math.floor(tokens);
-
-    const retryAfter = allowed
-      ? undefined
-      : Math.ceil(
-          (1 - tokens) /
-            config.refillRate,
-        );
-
     return {
-      allowed,
+      allowed: result.allowed,
       limit: config.capacity,
-      remaining,
-      resetAt: Math.floor(
-        (
-          now +
-          (
-            (config.capacity - tokens) /
-            config.refillRate
-          ) *
-            1000
-        ) / 1000,
+      remaining: Math.floor(
+        Math.max(result.tokens, 0),
       ),
-      retryAfter,
+      resetAt: Math.floor(
+        Date.now() / 1000,
+      ),
+      retryAfter: result.retryAfter,
     };
   }
 }
