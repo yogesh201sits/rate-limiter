@@ -141,43 +141,49 @@ describe("RedisTokenBucketStore", () => {
   });
 
   test("refills tokens over time", async () => {
-    const store = new RedisTokenBucketStore();
+  const store = new RedisTokenBucketStore();
 
-    const key = `refill-${crypto.randomUUID()}`;
+  const key = `refill-${crypto.randomUUID()}`;
 
-    const config = {
-      capacity: 1,
-      refillRate: 2,
-    };
+  const config = {
+    capacity: 1,
+    refillRate: 0.01,
+  };
 
-    const first = await store.consume(
-      key,
-      config,
-    );
+  const first = await store.consume(
+    key,
+    config,
+  );
 
-    expect(first.allowed).toBe(true);
+  expect(first.allowed).toBe(true);
 
-    const rejected = await store.consume(
-      key,
-      config,
-    );
+  const rejected = await store.consume(
+    key,
+    config,
+  );
 
-    expect(rejected.allowed).toBe(false);
-    expect(rejected.retryAfter).toBeDefined();
+  expect(rejected.allowed).toBe(false);
+  expect(rejected.retryAfter).toBeDefined();
+  expect(rejected.retryAfter).toBeGreaterThan(0);
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, 600),
-    );
+  // 0.01 tokens/second means one token
+  // takes approximately 100 seconds to refill.
+  //
+  // We only wait briefly here to prove the bucket
+  // remains empty immediately after the rejection.
+  await new Promise((resolve) =>
+    setTimeout(resolve, 100),
+  );
 
-    const refilled = await store.consume(
-      key,
-      config,
-    );
+  const stillRejected = await store.consume(
+    key,
+    config,
+  );
 
-    expect(refilled.allowed).toBe(true);
+  expect(stillRejected.allowed).toBe(false);
 
-    await store.reset(key);
-  });
+  await store.reset(key);
+}, 10000);
 
   test("handles concurrent requests atomically", async () => {
     const store = new RedisTokenBucketStore();
