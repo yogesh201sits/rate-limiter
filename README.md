@@ -1,13 +1,17 @@
-# Rate Limiter
+<p align="center">
+  <img width="500" height="500" alt="limiter-logo" src="https://github.com/user-attachments/assets/1b04eb62-e396-4afb-a0e1-b739779a3cf7" />
+</p>
 
-[![Bun](https://img.shields.io/badge/Bun-1.3.14-black?logo=bun)](https://bun.sh/)
-[![Hono](https://img.shields.io/badge/Hono-4.x-orange?logo=hono)](https://hono.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Redis](https://img.shields.io/badge/Redis-supported-red?logo=redis)](https://redis.io/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-metrics-orange?logo=prometheus)](https://prometheus.io/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<h1 align="center">Rate Limiter</h1>
 
-A production-oriented rate limiting service built with Bun, Hono, Redis, and TypeScript.
+<p align="center">
+  <img src="https://img.shields.io/badge/Bun-1.3.14-black?logo=bun" alt="Bun" />
+  <img src="https://img.shields.io/badge/Hono-4.x-orange?logo=hono" alt="Hono" />
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Redis-supported-red?logo=redis" alt="Redis" />
+  <img src="https://img.shields.io/badge/Prometheus-metrics-orange?logo=prometheus" alt="Prometheus" />
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License" />
+</p>
 
 A production-oriented distributed rate limiter built with **Bun, Hono, TypeScript, and Redis**.
 
