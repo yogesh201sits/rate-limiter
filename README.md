@@ -284,7 +284,7 @@ rate-limiter/
 Clone the repository:
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/yogesh201sits/rate-limiter
 cd rate-limiter
 ```
 
