@@ -30,6 +30,11 @@ export type RateLimitPolicy =
       name: string;
       algorithm: "token-bucket";
       config: TokenBucketConfig;
+    }
+  | {
+      name: string;
+      algorithm: "leaky-bucket";
+      config: LeakyBucketConfig;
     };
 
 export interface RateLimitStore {
@@ -47,3 +52,8 @@ export interface RateLimitStore {
     policyName: string,
   ): Promise<void>;
 }
+
+export type LeakyBucketConfig = {
+  capacity: number;
+  leakRate: number;
+};
