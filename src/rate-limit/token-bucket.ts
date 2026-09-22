@@ -1,7 +1,6 @@
-export type TokenBucketConfig = {
-  capacity: number;
-  refillRate: number;
-};
+import type { TokenBucketConfig } from "./types";
+
+export type { TokenBucketConfig } from "./types";
 
 export type TokenBucketResult = {
   allowed: boolean;
