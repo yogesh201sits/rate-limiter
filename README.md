@@ -54,6 +54,65 @@ The middleware is independent of the underlying algorithm.
 
 Policies determine which algorithm and configuration are used.
 
+                    ┌─────────────────┐
+                    │     CLIENT      │
+                    │   HTTP Request  │
+                    └────────┬────────┘
+                             │
+                             ▼
+              ┌──────────────────────────┐
+              │       HONO ROUTES        │
+              │ /api /auth /search       │
+              │ /burst /leaky            │
+              └────────────┬─────────────┘
+                           │
+                           ▼
+              ┌──────────────────────────┐
+              │   RATE LIMIT MIDDLEWARE  │
+              │                          │
+              │ keyGenerator             │
+              │ policy resolver          │
+              │ headers / 429            │
+              └────────────┬─────────────┘
+                           │
+                           ▼
+              ┌──────────────────────────┐
+              │    RateLimitEngine       │
+              │       check()            │
+              └────────────┬─────────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+      ┌────────────┐ ┌────────────┐ ┌────────────┐
+      │   Fixed    │ │   Token    │ │   Leaky    │
+      │   Window   │ │   Bucket   │ │   Bucket   │
+      │ RateLimiter│ │  Limiter   │ │  Limiter   │
+      └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
+            │              │              │
+            ▼              ▼              ▼
+      ┌────────────┐ ┌────────────┐ ┌────────────┐
+      │ RedisStore │ │ RedisToken │ │ RedisLeaky │
+      │ Atomic Lua │ │BucketStore │ │BucketStore │
+      └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
+            │              │              │
+            └──────────────┼──────────────┘
+                           ▼
+                    ┌─────────────┐
+                    │    REDIS    │
+                    │ Shared State│
+                    └─────────────┘
+
+
+       ┌──────────────────────────────────────┐
+       │           OBSERVABILITY              │
+       │                                      │
+       │ Middleware                           │
+       │      ↓                               │
+       │ prom-client                          │
+       │      ↓                               │
+       │ GET /metrics                         │
+       └──────────────────────────────────────┘
+
 ---
 
 ## Algorithms
