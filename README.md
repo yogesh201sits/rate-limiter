@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="500" height="500" alt="limiter-logo" src="https://github.com/user-attachments/assets/1b04eb62-e396-4afb-a0e1-b739779a3cf7" />
+  <img width="250" height="250" alt="limiter-logo" src="https://github.com/user-attachments/assets/1b04eb62-e396-4afb-a0e1-b739779a3cf7" />
 </p>
 
 <h1 align="center">Rate Limiter</h1>
